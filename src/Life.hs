@@ -1,10 +1,11 @@
 module Life (step
             , Cell
             , CellSet
-            , Board(cells)
+            , Board
             , Dimensions
             , mkBoard
             , mkDims
+            , runBoard
             , numNeighbors
             , isNeighbor
             , generateNeighbors) where
@@ -16,10 +17,7 @@ type CellSet = S.Set Cell
 
 data Dimensions = Dimensions { width :: Int, height :: Int } deriving (Eq, Show)
 
-data Board = Board {
-  dimensions :: Dimensions
-  , cells :: CellSet
-  } deriving (Eq, Show)
+data Board = Board Dimensions CellSet deriving (Eq, Show)
 
 mkDims :: Int -> Int -> Either String Dimensions
 mkDims w h = if w < 3 || h < 3
@@ -29,13 +27,20 @@ mkDims w h = if w < 3 || h < 3
 mkBoard :: Int -> Int -> CellSet -> Either String Board
 mkBoard w h c = do
   dims <- mkDims w h
-  return  Board { dimensions = dims, cells = S.map (wrapCell dims) c}
+  return (Board dims (S.map (wrapCell dims) c))
 
-step :: Board -> Board
-step board = Board { dimensions = dimensions board, cells = S.union filteredCells spawnedCells}
-  where cellSet = cells board
-        filteredCells = S.filter (validNumNeighbors (dimensions board) cellSet) cellSet
-        spawnedCells = generateNeighbors (dimensions board) cellSet
+runBoard :: Board -> [CellSet]
+runBoard (Board dims cellSet) = cellSet : genNext dims cellSet
+
+genNext :: Dimensions -> CellSet -> [CellSet]
+genNext dims cells | S.null nextCellS = []
+                   | otherwise = nextCellS : genNext dims nextCellS
+  where nextCellS = step dims cells
+
+step :: Dimensions -> CellSet -> CellSet
+step dims cellSet = S.union filteredCells spawnedCells
+  where filteredCells = S.filter (validNumNeighbors dims cellSet) cellSet
+        spawnedCells = generateNeighbors dims cellSet
 
 validNumNeighbors :: Dimensions -> CellSet -> Cell -> Bool
 validNumNeighbors dims cellSet cell = neighborCount == 3 || neighborCount == 2

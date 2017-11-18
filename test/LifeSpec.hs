@@ -21,35 +21,46 @@ spec = do
     it "should fail for sizes less than 3x3" $
       mkBoard 2 2 (S.fromList [(0,0)]) `shouldBe` Left "Board must be at least 3x3"
 
+  describe "runBoard" $ do
+    it "should always have the first set of cells, even if empty" $
+      runBoard (testBoard S.empty) `shouldSatisfy` ((1 ==) . length)
+    it "should stop once the board is empty" $
+      runBoard (testBoard (S.fromList [(0,0),
+                                       (1,1),
+                                       (63,63)])) `shouldBe` [S.fromList [(0,0),
+                                                                          (1,1),
+                                                                          (63,63)],
+                                                              S.fromList [(0,0)]]
+
   describe "step" $ do
     it "does nothing for an empty CellSet" $
-      step (testBoard S.empty) `shouldBe` testBoard S.empty
+      step testDims S.empty `shouldBe` S.empty
     it "removes a cell with fewer than two neighbors" $
-      cells (step $ testBoard $ S.fromList [(0,0)]) `shouldSatisfy` S.null
+      step testDims (S.fromList [(0,0)]) `shouldSatisfy` S.null
     it "removes a cell with more than three neighbors" $
-      cells (step $ testBoard $ S.fromList [(0,0),
-                                            (1,1),
-                                            (1,63),
-                                            (63, 1),
-                                            (63,63)]) `shouldBe` S.fromList [(0,1),
-                                                                               (0, 63),
-                                                                               (63, 0),
-                                                                               (1, 0)]
+      step testDims (S.fromList [(0,0),
+                                 (1,1),
+                                 (1,63),
+                                 (63, 1),
+                                 (63,63)]) `shouldBe` S.fromList [(0,1),
+                                                                  (0, 63),
+                                                                  (63, 0),
+                                                                  (1, 0)]
     it "keeps a cell with two neighbors" $
-      cells (step $ testBoard $ S.fromList [(0,0),
-                                            (1,1),
-                                            (63,63)]) `shouldBe` S.fromList [(0,0)]
+      step testDims (S.fromList [(0,0),
+                                 (1,1),
+                                 (63,63)]) `shouldBe` S.fromList [(0,0)]
     it "keeps a cell with three neighbors" $
-      cells (step $ testBoard $ S.fromList [(0,0),
-                                            (1,1),
-                                            (63, 1),
-                                            (63,63)]) `shouldBe` S.fromList [(0,0),
-                                                                               (63, 0),
-                                                                               (0, 1)]
+      step testDims (S.fromList [(0,0),
+                                 (1,1),
+                                 (63, 1),
+                                 (63,63)]) `shouldBe` S.fromList [(0,0),
+                                                                  (63, 0),
+                                                                  (0, 1)]
     it "spawns a cell with three neighbors" $
-      cells (step $ testBoard $ S.fromList [(1,1),
-                                            (63, 1),
-                                            (63,63)]) `shouldBe` S.fromList [(0,0)]
+      step testDims (S.fromList [(1,1),
+                                 (63, 1),
+                                 (63,63)]) `shouldBe` S.fromList [(0,0)]
 
   describe "isNeighbor" $ do
     it "is not its own neighbor" $
