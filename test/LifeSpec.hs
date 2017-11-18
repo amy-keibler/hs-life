@@ -13,34 +13,66 @@ main = hspec spec
 
 spec :: Spec
 spec = do
+  describe "board" $ do
+    it "should fail for an zero sized board" $
+      mkBoard 0 0 (S.fromList [(0,0)]) `shouldBe` Left "Board must be at least 3x3"
+    it "should fail for negative sizes" $
+      mkBoard (-1) (-1) (S.fromList [(0,0)]) `shouldBe` Left "Board must be at least 3x3"
+    it "should fail for sizes less than 3x3" $
+      mkBoard 2 2 (S.fromList [(0,0)]) `shouldBe` Left "Board must be at least 3x3"
+
   describe "step" $ do
     it "does nothing for an empty CellSet" $
-      step S.empty `shouldBe` S.empty
+      step (testBoard S.empty) `shouldBe` testBoard S.empty
     it "removes a cell with fewer than two neighbors" $
-      step (S.fromList [(0,0)]) `shouldSatisfy` S.null
+      cells (step $ testBoard $ S.fromList [(0,0)]) `shouldSatisfy` S.null
     it "removes a cell with more than three neighbors" $
-      step (S.fromList [(0,0), (1,1), (1,-1), (-1, 1), (-1,-1)]) `shouldBe` S.fromList [(0,1), (0, -1), (-1, 0), (1, 0)]
+      cells (step $ testBoard $ S.fromList [(0,0),
+                                            (1,1),
+                                            (1,63),
+                                            (63, 1),
+                                            (63,63)]) `shouldBe` S.fromList [(0,1),
+                                                                               (0, 63),
+                                                                               (63, 0),
+                                                                               (1, 0)]
     it "keeps a cell with two neighbors" $
-      step (S.fromList [(0,0), (1,1), (-1,-1)]) `shouldBe` S.fromList [(0,0)]
+      cells (step $ testBoard $ S.fromList [(0,0),
+                                            (1,1),
+                                            (63,63)]) `shouldBe` S.fromList [(0,0)]
     it "keeps a cell with three neighbors" $
-      step (S.fromList [(0,0), (1,1), (-1, 1), (-1,-1)]) `shouldBe` S.fromList [(0,0), (-1, 0), (0, 1)]
+      cells (step $ testBoard $ S.fromList [(0,0),
+                                            (1,1),
+                                            (63, 1),
+                                            (63,63)]) `shouldBe` S.fromList [(0,0),
+                                                                               (63, 0),
+                                                                               (0, 1)]
     it "spawns a cell with three neighbors" $
-      step (S.fromList [(1,1), (-1, 1), (-1,-1)]) `shouldBe` S.fromList [(0,0)]
+      cells (step $ testBoard $ S.fromList [(1,1),
+                                            (63, 1),
+                                            (63,63)]) `shouldBe` S.fromList [(0,0)]
 
   describe "isNeighbor" $ do
     it "is not its own neighbor" $
-      property (\x y -> not $ isNeighbor (x, y) (x, y))
+      property (\x y -> not $ isNeighbor testDims (x, y) (x, y))
     it "is a neighbor of a cell that is 1 away" $
-      isNeighbor (0, 0) (0, 1) `shouldBe` True
+      isNeighbor testDims (0, 0) (0, 1) `shouldBe` True
     it "is a neighbor of a cell that is 1 away in each axis" $
-      isNeighbor (0, 0) (1, 1) `shouldBe` True
+      isNeighbor testDims (0, 0) (1, 1) `shouldBe` True
     it "is not a neighbor of a cell that is more than 1 away" $
-      isNeighbor (0, 0) (0, 2) `shouldBe` False
+      isNeighbor testDims (0, 0) (0, 2) `shouldBe` False
+    it "is a neighbor to cells that wrap" $
+      isNeighbor testDims (0, 0) (63, 63) `shouldBe` True
 
   describe "generateNeighbors" $ do
     it "generates no neighbors for an empty set" $
-      generateNeighbors S.empty `shouldSatisfy` S.null
+      generateNeighbors testDims S.empty `shouldSatisfy` S.null
     it "generates a cell with three neighbors" $
-      generateNeighbors (S.fromList [(0,1), (1, 0), (1,1)]) `shouldBe` S.fromList [(0,0)]
+      generateNeighbors testDims (S.fromList [(0,1), (1, 0), (1,1)]) `shouldBe` S.fromList [(0,0)]
     it "doesn't generate a cell that is already live" $
-      generateNeighbors (S.fromList [(0,0), (0,1), (1, 0), (1,1)]) `shouldSatisfy` S.null
+      generateNeighbors testDims (S.fromList [(0,0), (0,1), (1, 0), (1,1)]) `shouldSatisfy` S.null
+
+testBoard :: CellSet -> Board
+testBoard = either error id . mkBoard 64 64
+
+testDims :: Dimensions
+testDims = either error id $ mkDims 64 64
