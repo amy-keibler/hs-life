@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Life (step
             , Cell
             , CellSet
@@ -10,6 +11,7 @@ module Life (step
             , isNeighbor
             , generateNeighbors) where
 
+import Data.Text as T
 import qualified Data.Set as S
 
 type Cell = (Int, Int)
@@ -19,12 +21,12 @@ data Dimensions = Dimensions { width :: Int, height :: Int } deriving (Eq, Show)
 
 data Board = Board Dimensions CellSet deriving (Eq, Show)
 
-mkDims :: Int -> Int -> Either String Dimensions
+mkDims :: Int -> Int -> Either Text Dimensions
 mkDims w h = if w < 3 || h < 3
   then Left "Board must be at least 3x3"
   else Right  Dimensions{ width = w, height = h}
 
-mkBoard :: Int -> Int -> CellSet -> Either String Board
+mkBoard :: Int -> Int -> CellSet -> Either Text Board
 mkBoard w h c = do
   dims <- mkDims w h
   return (Board dims (S.map (wrapCell dims) c))
