@@ -1,7 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
 module LifeSpec (main, spec) where
 
 import Test.Hspec
 import Test.QuickCheck
+
+import Data.Text as T hiding (length)
 
 import Life
 import qualified Data.Set as S
@@ -83,7 +86,7 @@ spec = do
       generateNeighbors testDims (S.fromList [(0,0), (0,1), (1, 0), (1,1)]) `shouldSatisfy` S.null
 
 testBoard :: CellSet -> Board
-testBoard = either error id . mkBoard 64 64
+testBoard = either (error . T.unpack) id . mkBoard 64 64
 
 testDims :: Dimensions
-testDims = either error id $ mkDims 64 64
+testDims = either (error . T.unpack) id $ mkDims 64 64
